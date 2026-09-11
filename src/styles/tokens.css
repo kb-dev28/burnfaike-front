@@ -1,0 +1,134 @@
+/* Burn fAIke — design tokens.
+   Three colors. There is no fourth. See design-system.md §1. */
+
+:root {
+  --ink: #0D0D0D;
+  --paper: #EDEDE5;
+  --signal: #C6F031;
+
+  /* Derived, for text hierarchy only. Never for decoration. */
+  --paper-dim: #8C8C85;
+  --paper-mute: #545450;
+  --rule: #2A2A28;
+
+  --display: "Anton", "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue Condensed", sans-serif-condensed, sans-serif;
+  --mono: "Space Mono", ui-monospace, monospace;
+
+  --radius: 0;
+  --border: 2px solid var(--paper);
+  --hairline: 1px solid var(--rule);
+
+  /* 4 8 12 16 24 32 48 64 96 128 — nothing between. */
+  --s4: 4px;
+  --s8: 8px;
+  --s12: 12px;
+  --s16: 16px;
+  --s24: 24px;
+  --s32: 32px;
+  --s48: 48px;
+  --s64: 64px;
+  --s96: 96px;
+  --s128: 128px;
+
+  --page-margin: 32px;
+  --max-width: 1440px;
+  --gutter: 24px;
+}
+
+@media (max-width: 767px) {
+  :root { --page-margin: 16px; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nothing rounds. Anywhere. */
+* { border-radius: var(--radius); }
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--ink);
+}
+
+/* ---- Type scale (§2) ---------------------------------------------------- */
+
+.t-hero {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(56px, 9vw, 132px);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.88;
+  margin: 0;
+}
+
+.t-section {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 40px;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.t-claim {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.t-body {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: 72ch;
+}
+
+.t-label {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.t-meta {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  color: var(--paper-mute);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

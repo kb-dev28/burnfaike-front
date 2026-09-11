@@ -1,0 +1,575 @@
+/* Burn fAIke — layout and components.
+   Grouping is done with hairlines and whitespace. No cards, no radii,
+   no shadows, no gradients, no second hue. */
+
+/* ---- Grid (§3) ---------------------------------------------------------- */
+
+.page {
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--page-margin);
+}
+
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+.section {
+  padding-block: var(--s64);
+  border-top: var(--hairline);
+}
+
+.section__head {
+  margin: 0 0 var(--s32);
+}
+
+/* ---- Hero (§6) ---------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  overflow: hidden;
+  border-bottom: var(--border);
+}
+
+.hero__strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8vh;
+  width: 100%;
+  height: 42vh;
+  min-height: 200px;
+  display: block;
+  z-index: 0;
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--s32) var(--s32);
+  width: 100%;
+}
+
+.hero__wordmark {
+  margin: 0;
+  color: var(--paper);
+}
+
+.hero__wordmark-sep {
+  display: inline-block;
+  margin-inline: var(--s12);
+  color: var(--paper-mute);
+}
+
+.hero__headline-block {
+  margin-block: var(--s64) 0;
+}
+
+.hero__headline {
+  /* Display type sets to the edge of its container. */
+  margin-left: -0.04em;
+}
+
+.hero__br--narrow,
+.hero__sp--narrow {
+  display: none;
+}
+
+.hero__support {
+  margin: var(--s24) 0 0;
+  color: var(--paper-dim);
+}
+
+.trace-form {
+  margin-top: auto;
+  padding-top: var(--s48);
+  padding-bottom: 26vh;
+  max-width: 820px;
+}
+
+.trace-form__label {
+  display: block;
+  color: var(--paper-dim);
+  margin-bottom: var(--s12);
+}
+
+.trace-form__line {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s16);
+  border-bottom: 2px solid var(--paper);
+}
+
+.trace-form__input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.4;
+  padding: var(--s12) 0;
+}
+
+.trace-form__input::placeholder {
+  color: var(--paper-mute);
+}
+
+.trace-form__input:disabled {
+  color: var(--paper-dim);
+}
+
+.trace-form__btn {
+  border: 2px solid var(--paper);
+  background: transparent;
+  color: var(--paper);
+  padding: var(--s12) var(--s24);
+  margin-bottom: -2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.trace-form__btn:hover:not(:disabled) {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.trace-form__btn:disabled {
+  border-color: var(--signal);
+  color: var(--signal);
+  cursor: default;
+}
+
+.trace-form__hint {
+  margin: var(--s12) 0 0;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+}
+
+/* ---- Claim bar (§6) ----------------------------------------------------- */
+
+.claim-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--ink);
+  border-bottom: var(--border);
+}
+
+.claim-bar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s16) var(--s24);
+  padding-block: var(--s16);
+}
+
+.claim-bar__claim {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.claim-bar__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s16);
+  flex-wrap: wrap;
+}
+
+.claim-bar__state {
+  color: var(--signal);
+}
+
+.notice {
+  color: var(--paper-dim);
+  border-left: 2px solid var(--signal);
+  margin-block: var(--s24);
+  padding-block: var(--s8);
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  max-width: 72ch;
+}
+
+/* ---- Research trail (§6) ------------------------------------------------ */
+
+.trail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trail__row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  column-gap: var(--gutter);
+  padding-block: var(--s32);
+  border-top: var(--hairline);
+}
+
+.trail__row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.trail__id {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--rule);
+  margin: 0;
+}
+
+.trail__body {
+  min-width: 0;
+}
+
+.trail__queries {
+  list-style: none;
+  margin: 0 0 var(--s16);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+}
+
+.trail__query {
+  color: var(--paper-dim);
+  word-break: break-word;
+}
+
+.trail__query::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 1px;
+  background: var(--signal);
+  vertical-align: middle;
+  margin-right: var(--s8);
+}
+
+.trail__gap {
+  margin: 0;
+}
+
+.trail__pending {
+  margin: 0;
+  padding-block: var(--s24);
+  border-top: var(--hairline);
+  color: var(--paper-dim);
+}
+
+/* ---- Evidence board (§6) ------------------------------------------------ */
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+.evidence > * {
+  grid-column: span 6;
+}
+
+.evidence__item {
+  padding-block: var(--s24);
+  border-top: var(--hairline);
+}
+
+/* Contradictory pairs bracketed together with a 2px left rule spanning both. */
+.evidence__pair {
+  border-top: var(--hairline);
+  border-left: 2px solid var(--paper);
+  padding-left: var(--s16);
+}
+
+.evidence__pair > .evidence__item:first-of-type {
+  border-top: 0;
+  padding-top: var(--s12);
+}
+
+.evidence__pair-note {
+  margin: 0;
+  padding-top: var(--s24);
+  color: var(--paper-dim);
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+}
+
+.evidence__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s12);
+  margin: 0 0 var(--s12);
+}
+
+.evidence__domain {
+  color: var(--paper);
+  word-break: break-word;
+}
+
+.evidence__tag {
+  background: var(--signal);
+  color: var(--ink);
+  padding: 3px 6px;
+}
+
+.evidence__claim {
+  margin: 0 0 var(--s12);
+}
+
+.evidence__footnote {
+  margin: 0 0 var(--s12);
+  padding-left: var(--s12);
+  border-left: 2px solid var(--rule);
+  color: var(--paper-dim);
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+}
+
+.evidence__date {
+  margin: 0;
+}
+
+/* ---- Marker system (§5) ------------------------------------------------- */
+
+.mark-highlight {
+  background: var(--signal);
+  color: var(--ink);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.mark-strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--paper);
+  text-decoration-thickness: 3px;
+}
+
+.redaction {
+  position: relative;
+  display: inline;
+}
+
+.redaction__btn {
+  position: relative;
+  font: inherit;
+  color: var(--paper);
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* The block covers the run it replaces, at the same width. */
+.redaction__btn::after {
+  content: '';
+  position: absolute;
+  inset: -1px -2px;
+  background: var(--paper);
+}
+
+.redaction[data-open] .redaction__btn::after {
+  display: none;
+}
+
+/* Present for screen readers at all times; painted only when the block lifts. */
+.redaction__note {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.redaction[data-open] .redaction__note {
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  width: min(320px, 78vw);
+  height: auto;
+  clip: auto;
+  overflow: visible;
+  white-space: normal;
+  background: var(--ink);
+  border: var(--hairline);
+  padding: var(--s12);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  color: var(--paper-dim);
+}
+
+.redaction__note-head {
+  display: block;
+  margin-bottom: var(--s8);
+  color: var(--signal);
+}
+
+/* ---- Paranoia meter (§6) ------------------------------------------------ */
+
+.meter {
+  padding-block: var(--s64);
+  border-top: var(--hairline);
+}
+
+.meter__head {
+  margin: 0 0 var(--s24);
+  color: var(--paper-dim);
+}
+
+.meter__band-wrap {
+  position: relative;
+}
+
+.meter__band {
+  display: block;
+  width: 100%;
+  height: 160px;
+}
+
+/* The score is a solid ink slab cutting into the band's left edge — paper on
+ * ink, so it never relies on the dither underneath for contrast. */
+.meter__score {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: var(--s8) var(--s24) var(--s8) var(--page-margin);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 132px;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+}
+
+.meter__label {
+  margin: var(--s24) 0 0;
+  color: var(--paper);
+  line-height: 1.5;
+}
+
+/* ---- Synthesis (§6) ----------------------------------------------------- */
+
+.synthesis__body {
+  margin: 0;
+}
+
+.cite {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0;
+}
+
+.cite a {
+  color: var(--signal);
+  text-decoration: none;
+  padding-inline: 2px;
+}
+
+.cite a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+
+.footer {
+  padding-block: var(--s48);
+  border-top: var(--hairline);
+  margin-top: var(--s64);
+}
+
+.footer p {
+  margin: 0;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  max-width: 72ch;
+}
+
+/* ---- Responsive (§9: full layout down to 360px) ------------------------- */
+
+@media (max-width: 900px) {
+  .trail__row {
+    grid-template-columns: 1fr;
+    row-gap: var(--s16);
+  }
+  .meter__score {
+    font-size: 96px;
+  }
+}
+
+@media (max-width: 767px) {
+  .evidence > * {
+    grid-column: span 12;
+  }
+  .hero__headline-block {
+    margin-block: var(--s48) 0;
+  }
+  .trace-form {
+    padding-bottom: 22vh;
+  }
+  .meter__band {
+    height: 120px;
+  }
+  .meter__score {
+    font-size: 72px;
+  }
+  .section,
+  .meter {
+    padding-block: var(--s48);
+  }
+}
+
+@media (max-width: 520px) {
+  .hero__br--narrow,
+  .hero__sp--narrow {
+    display: inline;
+  }
+  .hero__br--wide,
+  .hero__sp--wide {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .trace-form__line {
+    flex-wrap: wrap;
+  }
+  .trace-form__btn {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .meter__score {
+    font-size: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
