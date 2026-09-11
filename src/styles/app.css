@@ -33,20 +33,32 @@
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  overflow: hidden;
   border-bottom: var(--border);
 }
 
-/* In flow as the last item of the hero column, not absolutely positioned: the
- * content above can then never push it off the fold, and the negative margin
- * lets it run past the hero's bottom edge to be cropped there. */
-.hero__strip {
-  flex: 0 0 auto;
+/* Headline and footage share one row of the 12-column grid. The headline keeps
+ * eight columns, which is what the spec's 132px ceiling needs to still fit
+ * three lines — so the type scale is untouched by the split. */
+.hero__lead {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--gutter);
+  align-items: stretch;
+  margin-block: var(--s64) 0;
+}
+
+.hero__headline-block {
+  grid-column: span 8;
+  min-width: 0;
+}
+
+/* Stretched to the headline's height, so the panel is sized by the type rather
+ * than by a number picked to look right at one width. */
+.hero__panel {
+  grid-column: span 4;
   display: block;
   width: 100%;
-  height: 34vh;
-  min-height: 180px;
-  margin-bottom: -6vh;
+  min-height: 280px;
 }
 
 .hero__inner {
@@ -70,8 +82,8 @@
   color: var(--paper-mute);
 }
 
-.hero__headline-block {
-  margin-block: var(--s64) 0;
+.hero__sep {
+  color: var(--paper-mute);
 }
 
 .hero__headline {
@@ -85,6 +97,10 @@
 }
 
 .hero__qualifier {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s16);
+  row-gap: var(--s4);
   margin: var(--s24) 0 0;
   color: var(--signal);
 }
@@ -96,8 +112,8 @@
 
 .trace-form {
   margin-top: auto;
-  padding-top: var(--s48);
-  padding-bottom: var(--s32);
+  padding-top: var(--s64);
+  padding-bottom: var(--s48);
   max-width: 820px;
 }
 
@@ -516,6 +532,19 @@
 /* ---- Responsive (§9: full layout down to 360px) ------------------------- */
 
 @media (max-width: 900px) {
+  /* Stacked: the panel keeps its own row under the headline, and its wider box
+   * makes the cell count resolve to two amulets instead of one. */
+  .hero__headline-block,
+  .hero__panel {
+    grid-column: span 12;
+  }
+
+  .hero__panel {
+    margin-top: var(--s32);
+    min-height: 0;
+    aspect-ratio: 2 / 1;
+  }
+
   .trail__row {
     grid-template-columns: 1fr;
     row-gap: var(--s16);
@@ -526,14 +555,17 @@
 }
 
 @media (max-width: 767px) {
+  /* Wrapped onto two lines, the separators would strand at a line end. The
+     column gap carries the separation on its own. */
+  .hero__sep {
+    display: none;
+  }
+
   .evidence > * {
     grid-column: span 12;
   }
-  .hero__headline-block {
+  .hero__lead {
     margin-block: var(--s48) 0;
-  }
-  .hero__strip {
-    height: 28vh;
   }
   .meter__band {
     height: 120px;

@@ -3,5 +3,9 @@
   "width": 180,
   "frameHeight": 180,
   "frames": 16,
-  "fps": 8
+  "fps": 8,
+  "gamma": 1.4,
+  "gain": 0.88,
+  "ceiling": 0.86,
+  "zoom": 1
 }

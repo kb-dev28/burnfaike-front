@@ -62,14 +62,14 @@ export function DitherBand({ density, run, label, className = '', pixelSize = 3 
 }
 
 /* The hero's footage, converted by tools/footage-to-strip.mjs. */
-function useFootage() {
+function useFootage(name) {
   const [footage, setFootage] = useState(null);
 
   useEffect(() => {
     let live = true;
     const base = import.meta.env.BASE_URL;
 
-    fetch(`${base}hero-strip.json`)
+    fetch(`${base}${name}.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no manifest'))))
       .then(
         (m) =>
@@ -77,7 +77,7 @@ function useFootage() {
             const image = new Image();
             image.onload = () => resolve({ ...m, image });
             image.onerror = () => reject(new Error('no sheet'));
-            image.src = `${base}hero-strip.png`;
+            image.src = `${base}${name}.png`;
           }),
       )
       .then((f) => live && setFootage(f))
@@ -87,18 +87,26 @@ function useFootage() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [name]);
 
   return footage;
 }
 
-/* The hero strip. Runs at 12fps — low frame rates are correct here. `noise`
- * mixes the field toward static, which is the loading state (§7). */
-export function DitherStrip({ noise = 0, className = '', pixelSize = 3 }) {
+/* The hero panel. Runs at the rate baked into the manifest — low frame rates
+ * are correct here. `noise` mixes the field toward static, which is the loading
+ * state (§7). */
+export function DitherPanel({
+  name,
+  noise = 0,
+  className = '',
+  pixelSize = 3,
+  anchorY = 0.5,
+  fade = false,
+}) {
   const canvasRef = useRef(null);
   const noiseRef = useRef(noise);
   const reduced = useReducedMotion();
-  const footage = useFootage();
+  const footage = useFootage(name);
 
   noiseRef.current = noise;
 
@@ -118,7 +126,8 @@ export function DitherStrip({ noise = 0, className = '', pixelSize = 3 }) {
         time,
         noise: n,
         pixelSize,
-        anchorY: 0.41,
+        anchorY,
+        fade,
       });
 
     /* Reduced motion holds a single frame rather than running the loop. */
@@ -141,7 +150,7 @@ export function DitherStrip({ noise = 0, className = '', pixelSize = 3 }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [reduced, pixelSize, footage]);
+  }, [reduced, pixelSize, footage, anchorY, fade]);
 
   useResize(canvasRef, () => {
     const canvas = canvasRef.current;
@@ -152,7 +161,8 @@ export function DitherStrip({ noise = 0, className = '', pixelSize = 3 }) {
       frame: 0,
       noise: noiseRef.current,
       pixelSize,
-      anchorY: 0.41,
+      anchorY,
+      fade,
     });
   });
 

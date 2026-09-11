@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DitherStrip } from './DitherCanvas';
+import { DitherPanel } from './DitherCanvas';
+import { HERO_FOOTAGE } from '../data/hero';
 import { EXAMPLE_CLAIM } from '../data/trace';
 
 export default function Hero({ onTrace, busy }) {
@@ -19,30 +20,38 @@ export default function Hero({ onTrace, busy }) {
           Rumor-tracing agent
         </p>
 
-        <div className="hero__headline-block">
-          {/* Three lines at every width. The grouping changes under 520px so
-              the headline never needs a fourth. */}
-          <h1 className="t-hero hero__headline">
-            Trace a rumor
-            <br />
-            before it
-            <br className="hero__br--narrow" />
-            <span className="hero__sp--wide">{'\u00A0'}</span>
-            moves
-            <br className="hero__br--wide" />
-            <span className="hero__sp--narrow">{'\u00A0'}</span>
-            a price
-          </h1>
-          <p className="t-label hero__qualifier">
-            AI agent
-            <span className="hero__wordmark-sep" aria-hidden="true">/</span>
-            For trading desks
-            <span className="hero__wordmark-sep" aria-hidden="true">/</span>
-            Callable from your own stack
-          </p>
-          <p className="t-body hero__support">
-            Where the story started, how it mutated, and what still holds. Not a verdict.
-          </p>
+        <div className="hero__lead">
+          <div className="hero__headline-block">
+            {/* Three lines at every width. The grouping changes under 520px so
+                the headline never needs a fourth. */}
+            <h1 className="t-hero hero__headline">
+              Trace a rumor
+              <br />
+              before it
+              <br className="hero__br--narrow" />
+              <span className="hero__sp--wide">{' '}</span>
+              moves
+              <br className="hero__br--wide" />
+              <span className="hero__sp--narrow">{' '}</span>
+              a price
+            </h1>
+
+            {/* Explicit spans, so each phrase is its own flex item and the gap
+                between them is reliable once the separators drop away. */}
+            <p className="t-label hero__qualifier">
+              <span>AI agent</span>
+              <span className="hero__sep" aria-hidden="true">/</span>
+              <span>For trading desks</span>
+              <span className="hero__sep" aria-hidden="true">/</span>
+              <span>Callable from your own stack</span>
+            </p>
+
+            <p className="t-body hero__support">
+              Where the story started, how it mutated, and what still holds. Not a verdict.
+            </p>
+          </div>
+
+          <DitherPanel className="hero__panel" name={HERO_FOOTAGE} noise={busy ? 1 : 0} />
         </div>
 
         <form className="trace-form" onSubmit={submit}>
@@ -70,8 +79,6 @@ export default function Hero({ onTrace, busy }) {
           </p>
         </form>
       </div>
-
-      <DitherStrip className="hero__strip" noise={busy ? 1 : 0} />
     </header>
   );
 }

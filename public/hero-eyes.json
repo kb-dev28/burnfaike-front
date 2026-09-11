@@ -1,0 +1,11 @@
+{
+  "source": "eyes-amulets.mp4",
+  "width": 220,
+  "frameHeight": 220,
+  "frames": 16,
+  "fps": 3,
+  "gamma": 0.9,
+  "gain": 1,
+  "ceiling": 0.88,
+  "zoom": 1.1
+}

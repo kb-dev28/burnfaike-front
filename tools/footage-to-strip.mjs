@@ -14,6 +14,22 @@
  *
  *   --frames N     frames to keep, evenly sampled (default 12)
  *   --fps N        playback rate written into the manifest (default 12)
+ *   --name NAME    output basename under public/ (default hero-strip)
+ *   --crop x,y,w,h source-pixel region to keep, applied before the resize
+ *
+ * Display grade, written into the manifest and applied at render time — so it
+ * can be retuned without re-encoding the sheet. Each source needs its own: a
+ * curve that tames a bright subject filling the frame will crush a small one
+ * sitting on black.
+ *
+ *   --out-gamma N  <1 lifts, >1 darkens (default 1.4)
+ *   --out-gain N   overall multiplier (default 0.88)
+ *   --out-ceiling N  hard cap, keeps the accent a screen not a fill (default 0.86)
+ *   --out-zoom N   framing: >1 crops in on the subject (default 1)
+ *
+ *   --shots        sample one frame per detected shot instead of evenly. For
+ *                  footage that cuts between subjects, even sampling drifts
+ *                  across the cuts and lands on transitions.
  *   --width N      output width in px (default 320)
  *   --out PATH     sprite sheet path (default public/hero-strip.png)
  *   --levels lo,hi black/white points in 0-255, stretched to full range
@@ -46,8 +62,15 @@ const has = (name) => argv.includes(`--${name}`);
 
 const FRAMES = Number(flag('frames', 12));
 const FPS = Number(flag('fps', 12));
+const NAME = flag('name', 'hero-strip');
+const CROP = flag('crop', null);
+const SHOTS = has('shots');
+const OUT_GAMMA = Number(flag('out-gamma', 1.4));
+const OUT_GAIN = Number(flag('out-gain', 0.88));
+const OUT_CEILING = Number(flag('out-ceiling', 0.86));
+const OUT_ZOOM = Number(flag('out-zoom', 1));
 const WIDTH = Number(flag('width', 320));
-const OUT = flag('out', 'public/hero-strip.png');
+const OUT = flag('out', null);
 const GAMMA = Number(flag('gamma', 1));
 const TRIM = Number(flag('trim', 0));
 const INVERT = has('invert');
@@ -131,16 +154,75 @@ const source = statSync(input).isDirectory()
       ? loadVideo(input)
       : (() => { throw new Error(`unsupported input: ${ext || input}`); })();
 
-const { width: srcW, height: srcH } = source;
+let { width: srcW, height: srcH } = source;
+
+/* Crop before anything else: these subjects sit in the middle of a tall frame,
+ * and without a crop most of the sheet would be the black around them. */
+if (CROP) {
+  const [cx, cy, cw, ch] = CROP.split(',').map(Number);
+  if ([cx, cy, cw, ch].some((v) => !Number.isFinite(v))) throw new Error('--crop wants x,y,w,h');
+  if (cx < 0 || cy < 0 || cx + cw > srcW || cy + ch > srcH) throw new Error('--crop falls outside the frame');
+  source.frames = source.frames.map((f) => {
+    const out = new Float32Array(cw * ch);
+    for (let y = 0; y < ch; y++) {
+      for (let x = 0; x < cw; x++) out[y * cw + x] = f[(cy + y) * srcW + cx + x];
+    }
+    return out;
+  });
+  srcW = cw;
+  srcH = ch;
+}
 let pool = source.frames.slice(0, source.frames.length - TRIM);
 if (!pool.length) throw new Error('no frames left after --trim');
 if (PINGPONG && pool.length > 2) pool = pool.concat(pool.slice(1, -1).reverse());
 
-/* Evenly sample down to the frame count we actually loop. Low frame rates are
- * correct here; smoothness is wrong. */
-const keep = Math.min(FRAMES, pool.length);
-const picked = Array.from({ length: keep }, (_, i) =>
-  pool[Math.round((i * (pool.length - 1)) / Math.max(1, keep - 1))]);
+/* Mean absolute difference between consecutive frames, sampled sparsely. A cut
+ * shows up as a spike far above the run of ordinary motion. */
+function shotStarts(frames) {
+  const step = 16;
+  const deltas = frames.slice(1).map((f, i) => {
+    const prev = frames[i];
+    let sum = 0;
+    let n = 0;
+    for (let p = 0; p < f.length; p += step) {
+      sum += Math.abs(f[p] - prev[p]);
+      n++;
+    }
+    return sum / n;
+  });
+  const mean = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+  const sd = Math.sqrt(deltas.reduce((a, b) => a + (b - mean) ** 2, 0) / deltas.length);
+  const threshold = mean + 2 * sd;
+  const starts = [0];
+  deltas.forEach((d, i) => {
+    /* i is the boundary between frame i and i+1. Ignore a cut that lands within
+     * two frames of the last one: that is a dissolve, not a new shot. */
+    if (d > threshold && i + 1 - starts[starts.length - 1] > 2) starts.push(i + 1);
+  });
+  return starts;
+}
+
+let picked;
+if (SHOTS) {
+  const starts = shotStarts(pool);
+  /* The middle frame of each shot, so a dissolve at either end is never the
+   * frame that represents it. */
+  picked = starts.map((start, i) => {
+    const end = i + 1 < starts.length ? starts[i + 1] : pool.length;
+    return pool[Math.floor((start + end - 1) / 2)];
+  });
+  if (picked.length > FRAMES) {
+    picked = Array.from({ length: FRAMES }, (_, i) =>
+      picked[Math.round((i * (picked.length - 1)) / (FRAMES - 1))]);
+  }
+  console.log(`  detected ${starts.length} shots, kept ${picked.length}`);
+} else {
+  /* Evenly sample down to the frame count we actually loop. Low frame rates are
+   * correct here; smoothness is wrong. */
+  const keep = Math.min(FRAMES, pool.length);
+  picked = Array.from({ length: keep }, (_, i) =>
+    pool[Math.round((i * (pool.length - 1)) / Math.max(1, keep - 1))]);
+}
 
 const outH = Math.max(1, Math.round(srcH * (WIDTH / srcW)));
 
@@ -193,11 +275,26 @@ picked.forEach((frame, i) => {
   }
 });
 
+const outPath = OUT || `public/${NAME}.png`;
 const encoded = PNG.sync.write(sheet, { colorType: 0 });
-writeFileSync(OUT, encoded);
+writeFileSync(outPath, encoded);
 writeFileSync(
-  join(dirname(OUT), 'hero-strip.json'),
-  JSON.stringify({ source: basename(input), width: WIDTH, frameHeight: outH, frames: picked.length, fps: FPS }, null, 2) + '\n',
+  join(dirname(outPath), `${NAME}.json`),
+  JSON.stringify(
+    {
+      source: basename(input),
+      width: WIDTH,
+      frameHeight: outH,
+      frames: picked.length,
+      fps: FPS,
+      gamma: OUT_GAMMA,
+      gain: OUT_GAIN,
+      ceiling: OUT_CEILING,
+      zoom: OUT_ZOOM,
+    },
+    null,
+    2,
+  ) + '\n',
 );
 
 /* Decode what was just written and report its actual tonal range — a sheet that
@@ -216,6 +313,6 @@ for (let p = 0; p < check.width * check.height; p++) {
 
 console.log(
   `${basename(input)}: ${srcW}x${srcH}, ${source.frames.length} frames\n` +
-  `  -> ${OUT}  ${WIDTH}x${outH} x ${picked.length} frames, ${(encoded.length / 1024).toFixed(0)} kB\n` +
+  `  -> ${outPath}  ${WIDTH}x${outH} x ${picked.length} frames, ${(encoded.length / 1024).toFixed(0)} kB\n` +
   `     luminance min ${min} / mean ${(sum / (check.width * check.height)).toFixed(1)} / max ${max}`,
 );
