@@ -5,6 +5,7 @@ import ResearchTrail from './components/ResearchTrail';
 import EvidenceBoard from './components/EvidenceBoard';
 import ParanoiaMeter from './components/ParanoiaMeter';
 import Synthesis from './components/Synthesis';
+import AgentInterface from './components/AgentInterface';
 import { TRACE, EXAMPLE_CLAIM } from './data/trace';
 
 /* Rounds land one at a time so the process stays visible — the first of the
@@ -81,10 +82,14 @@ export default function App() {
         </main>
       )}
 
+      <AgentInterface />
+
       <footer className="footer page">
+        {/* The result states moved into the agent interface section, where they
+            are part of the contract rather than a footnote. */}
         <p className="t-meta">
-          Burn fAIke — rumor tracing. Result states: traced to a source, mutated,
-          contradicted, no source found.
+          Burn fAIke — a rumor-tracing agent. Run a trace above, or call it from your
+          own stack.
         </p>
       </footer>
     </>

@@ -16,7 +16,7 @@ export default function Hero({ onTrace, busy }) {
         <p className="t-label hero__wordmark">
           Burn fAIke
           <span className="hero__wordmark-sep" aria-hidden="true">/</span>
-          Rumor tracing
+          Rumor-tracing agent
         </p>
 
         <div className="hero__headline-block">
@@ -33,6 +33,13 @@ export default function Hero({ onTrace, busy }) {
             <span className="hero__sp--narrow">{'\u00A0'}</span>
             a price
           </h1>
+          <p className="t-label hero__qualifier">
+            AI agent
+            <span className="hero__wordmark-sep" aria-hidden="true">/</span>
+            For trading desks
+            <span className="hero__wordmark-sep" aria-hidden="true">/</span>
+            Callable from your own stack
+          </p>
           <p className="t-body hero__support">
             Where the story started, how it mutated, and what still holds. Not a verdict.
           </p>

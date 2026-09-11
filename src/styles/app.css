@@ -84,8 +84,13 @@
   display: none;
 }
 
-.hero__support {
+.hero__qualifier {
   margin: var(--s24) 0 0;
+  color: var(--signal);
+}
+
+.hero__support {
+  margin: var(--s12) 0 0;
   color: var(--paper-dim);
 }
 
@@ -571,5 +576,82 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Agent interface ---------------------------------------------------- */
+
+.agent__lede {
+  margin: 0 0 var(--s32);
+}
+
+.agent__grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+.agent__block {
+  grid-column: span 6;
+  min-width: 0;
+  padding-top: var(--s24);
+  border-top: var(--hairline);
+}
+
+.agent__block-head {
+  margin: 0 0 var(--s16);
+  color: var(--paper-dim);
+}
+
+/* Payloads are the one thing on the page allowed to run wider than the column,
+ * and they scroll in their own container so the body never does. */
+.agent__code {
+  margin: 0;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--paper);
+  tab-size: 2;
+}
+
+.agent__states {
+  margin-top: var(--s48);
+  padding-top: var(--s24);
+  border-top: var(--hairline);
+}
+
+.agent__state-list {
+  list-style: none;
+  margin: 0 0 var(--s24);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s8) var(--s24);
+}
+
+/* The four states are the whole output vocabulary, so they are marked the way a
+ * supported claim is marked everywhere else on the page. */
+.agent__state {
+  background: var(--signal);
+  color: var(--ink);
+  padding: 0 var(--s8);
+  max-width: none;
+}
+
+.agent__note {
+  margin: 0;
+  color: var(--paper-dim);
+}
+
+.agent__note code {
+  font-family: var(--mono);
+  color: var(--paper);
+}
+
+@media (max-width: 900px) {
+  .agent__block {
+    grid-column: span 12;
   }
 }

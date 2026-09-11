@@ -1,7 +1,8 @@
 # Burn fAIke
 
-A rumor-tracing engine. You submit a claim; the system researches it across
-several rounds and returns a **provenance trail rather than a verdict**.
+An AI agent that traces rumors, built for trading desks. You submit a claim — or
+your own agent calls it as a tool — and it researches across several rounds and
+returns a **provenance trail rather than a verdict**.
 
 Live: https://gauthierdewilliencourt.github.io/burnfaike-front/
 
@@ -44,6 +45,7 @@ changes the public URL and breaks `base`.
 | §4 Dither — 1-bit, density as data | `src/lib/dither.js`, `tools/footage-to-strip.mjs` |
 | §5 Marker — highlight / strike / redaction | `src/components/Marker.jsx` |
 | §6 Components | `src/components/` |
+| §8 Copy — four result states, never a verdict | `AgentInterface.jsx`, `data/trace.js` |
 | §7 Motion — one orchestrated moment | `DitherCanvas.jsx` |
 | §9 Accessibility floor | throughout; see below |
 
@@ -65,6 +67,10 @@ Notes on the parts that needed a decision:
   the dither underneath to be readable (§9).
 - **The score is a consequence of the trail**, so the meter renders after the
   evidence board in reading order (§10).
+- **"Agent-compatible" is shown, not claimed.** The agent interface section
+  renders the tool definition and a response payload derived from the sample
+  trail itself, so the documented shape cannot drift from the data. It is always
+  on the page, before anything has been traced.
 - **Redactions are buttons.** They open on hover, on focus and on click, and the
   explanation is in the accessibility tree at all times, not only when revealed.
 - **Three headline lines at every width.** The grouping changes under 520px so
