@@ -89,9 +89,9 @@ export function fitCanvas(canvas, pixelSize) {
   };
 }
 
-/* Threshold a Float grayscale buffer and blit it, nearest-neighbour, to the
- * visible canvas. */
-function blit(canvas, lum, w, h, palette) {
+/* Paint an already-thresholded 1-bit field, nearest-neighbour, to the visible
+ * canvas. Nothing downstream of here can reintroduce a midtone. */
+function blitBits(canvas, bits, w, h, palette) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const { off, on } = PALETTES[palette] || PALETTES.signal;
@@ -99,23 +99,62 @@ function blit(canvas, lum, w, h, palette) {
   const img = s.ctx.createImageData(w, h);
   const px = img.data;
 
-  for (let y = 0; y < h; y++) {
-    const row = BAYER_8[y & 7];
-    for (let x = 0; x < w; x++) {
-      const threshold = (row[x & 7] + 0.5) / 64;
-      const c = lum[y * w + x] > threshold ? on : off;
-      const i = (y * w + x) * 4;
-      px[i] = c[0];
-      px[i + 1] = c[1];
-      px[i + 2] = c[2];
-      px[i + 3] = 255;
-    }
+  for (let p = 0; p < w * h; p++) {
+    const c = bits[p] ? on : off;
+    const i = p * 4;
+    px[i] = c[0];
+    px[i + 1] = c[1];
+    px[i + 2] = c[2];
+    px[i + 3] = 255;
   }
 
   s.ctx.putImageData(img, 0, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(s.el, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
+}
+
+/* Ordered dither: the Bayer matrix is the right tool where the density itself
+ * is the message, because coverage tracks the input value exactly. */
+function blit(canvas, lum, w, h, palette) {
+  const bits = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const row = BAYER_8[y & 7];
+    for (let x = 0; x < w; x++) {
+      bits[y * w + x] = lum[y * w + x] > (row[x & 7] + 0.5) / 64 ? 1 : 0;
+    }
+  }
+  blitBits(canvas, bits, w, h, palette);
+}
+
+/* Floyd-Steinberg error diffusion, serpentine. This is what §4 specifies for
+ * imagery: the quantisation error of each pixel is pushed into its unvisited
+ * neighbours, so a photographic source keeps its tonal structure at one bit.
+ * Destructive — `lum` is consumed. */
+function diffuse(lum, w, h) {
+  const bits = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const ltr = (y & 1) === 0;
+    const step = ltr ? 1 : -1;
+    for (let i = 0; i < w; i++) {
+      const x = ltr ? i : w - 1 - i;
+      const idx = y * w + x;
+      const old = lum[idx];
+      const next = old > 0.5 ? 1 : 0;
+      bits[idx] = next;
+      const err = old - next;
+      const ahead = x + step;
+      const behind = x - step;
+      if (ahead >= 0 && ahead < w) lum[idx + step] += err * 0.4375;
+      if (y + 1 < h) {
+        const below = (y + 1) * w;
+        if (behind >= 0 && behind < w) lum[below + behind] += err * 0.1875;
+        lum[below + x] += err * 0.3125;
+        if (ahead >= 0 && ahead < w) lum[below + ahead] += err * 0.0625;
+      }
+    }
+  }
+  return bits;
 }
 
 /* A flat band at one density — the Paranoia Meter, and nothing else. */
@@ -141,18 +180,32 @@ export function paintBand(canvas, density, options = {}) {
   blit(canvas, lum, w, h, palette);
 }
 
-/* The hero: a chronophotographic strip. Each cell holds the same figure one
- * beat further into its stride, the way Muybridge laid frames side by side.
- * `noise` mixes the whole field toward static — that is the loading state.
- */
-export function paintStrip(canvas, options = {}) {
+export function paintFootage(canvas, options = {}) {
   const {
-    pixelSize = 3,
+    image,
+    frameWidth,
+    frameHeight,
+    frames,
+    frame = 0,
     time = 0,
     noise = 0,
-    seed = 3,
-    palette = 'signal',
+    pixelSize = 3,
     fade = true,
+    palette = 'signal',
+    seed = 3,
+    cells,
+    zoom = 1,
+    /* Where the subject's centre sits in the band, 0 = top, 1 = bottom. The
+     * band runs past the fold, so centring on 0.5 would bury the part of the
+     * frame that carries the motion. */
+    anchorY = 0.5,
+    /* Photographic highlights would dither out as a flat lime field, which is
+     * the one thing §10 says kills the system. The curve pulls the top end
+     * down so the brightest area still reads as a screen, and it is a curve
+     * rather than a clamp so the shading inside it survives. */
+    gamma = 1.4,
+    gain = 0.88,
+    ceiling = 0.86,
   } = options;
 
   const grid = fitCanvas(canvas, pixelSize);
@@ -164,82 +217,54 @@ export function paintStrip(canvas, options = {}) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, w, h);
 
-  /* Frame count follows the aspect ratio, so the strip stays a strip: a wide
-   * band gets more frames rather than bigger figures. */
-  const cells = Math.max(3, Math.min(9, Math.round(w / (h * 0.55))));
-  const cellW = w / cells;
-  const scale = Math.min(h * 0.88, cellW * 1.4);
-  const baseY = h * 0.99;
+  /* Chronophotography: the band is divided into cells, and each cell holds the
+   * same subject at a different moment of the loop, evenly spaced around it.
+   * The whole row advances together, so the strip reads as one motion
+   * decomposed rather than a row of copies. Cell count follows the source's
+   * aspect ratio, so cells stay roughly as square as the footage. */
+  const aspect = frameWidth / frameHeight;
+  const count = Math.max(1, Math.min(9, cells || Math.round(w / (h * aspect))));
+  const cellW = w / count;
 
-  ctx.strokeStyle = '#fff';
-  ctx.fillStyle = '#fff';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(1, scale * 0.075);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
-  for (let i = 0; i < cells; i++) {
-    const phase = (time * 0.55 + i / cells) % 1;
-    const a = phase * Math.PI * 2;
-    const cx = cellW * (i + 0.5);
-    const bob = Math.sin(a * 2) * scale * 0.04;
-    const hip = baseY - scale * 0.46 + bob;
-    const shoulder = hip - scale * 0.34;
-    const headR = scale * 0.09;
+  for (let i = 0; i < count; i++) {
+    const index = (((frame + Math.round((i * frames) / count)) % frames) + frames) % frames;
+    /* Cover-fit inside the cell: the overflow is cropped, never letterboxed. */
+    const cover = Math.max(cellW / frameWidth, h / frameHeight) * zoom;
+    const dw = frameWidth * cover;
+    const dh = frameHeight * cover;
 
-    ctx.globalAlpha = 0.5 + 0.5 * (i / Math.max(1, cells - 1));
-
-    // head
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(cx + scale * 0.05, shoulder - headR * 1.5, headR, 0, Math.PI * 2);
-    ctx.fill();
-
-    // spine
-    ctx.beginPath();
-    ctx.moveTo(cx + scale * 0.05, shoulder);
-    ctx.lineTo(cx, hip);
-    ctx.stroke();
-
-    // legs, counter-swinging
-    for (const dir of [1, -1]) {
-      const swing = Math.sin(a) * dir;
-      const knee = [cx + swing * scale * 0.26, hip + scale * 0.26];
-      ctx.beginPath();
-      ctx.moveTo(cx, hip);
-      ctx.lineTo(knee[0], knee[1]);
-      ctx.lineTo(knee[0] + swing * scale * 0.12, baseY);
-      ctx.stroke();
-    }
-
-    // arms, opposite the legs
-    for (const dir of [1, -1]) {
-      const swing = -Math.sin(a) * dir;
-      const elbow = [cx + scale * 0.05 + swing * scale * 0.2, shoulder + scale * 0.18];
-      ctx.beginPath();
-      ctx.moveTo(cx + scale * 0.05, shoulder);
-      ctx.lineTo(elbow[0], elbow[1]);
-      ctx.lineTo(elbow[0] + swing * scale * 0.14, elbow[1] + scale * 0.16);
-      ctx.stroke();
-    }
+    ctx.rect(i * cellW, 0, cellW, h);
+    ctx.clip();
+    ctx.drawImage(
+      image,
+      0, index * frameHeight, frameWidth, frameHeight,
+      i * cellW + (cellW - dw) / 2, anchorY * h - dh / 2, dw, dh,
+    );
+    ctx.restore();
   }
-
-  ctx.globalAlpha = 1;
 
   const src = ctx.getImageData(0, 0, w, h).data;
   const lum = new Float32Array(w * h);
   const n = clamp01(noise);
-  const frame = Math.floor(time * 12);
+  const staticSeed = Math.floor(time * 12) + seed;
 
   for (let y = 0; y < h; y++) {
-    /* Cropped by the fold: the strip thins out at the top so it reads as
-     * continuing off-screen rather than sitting in a box. */
-    const falloff = fade ? clamp01((y / h - 0.06) / 0.38) : 1;
+    /* A short fade at the top edge only: the band is cropped by the fold at the
+     * bottom, so it already continues off-screen there. */
+    const falloff = fade ? clamp01((y / h) / 0.12) : 1;
     for (let x = 0; x < w; x++) {
-      /* Capped below 1: the accent stays a screen, never a solid fill. */
-      const figure = Math.min(0.8, (src[(y * w + x) * 4] / 255) * falloff);
-      const static_ = hash2(x, y, frame + seed);
-      lum[y * w + x] = figure * (1 - n) + static_ * n;
+      const p = y * w + x;
+      const value = Math.pow(src[p * 4] / 255, gamma) * gain * falloff;
+      /* Static is mixed into the source field *before* the diffusion, which is
+       * why the frames ship grayscale rather than pre-dithered. */
+      lum[p] = Math.min(ceiling, value * (1 - n) + hash2(x, y, staticSeed) * n);
     }
   }
 
-  blit(canvas, lum, w, h, palette);
+  blitBits(canvas, diffuse(lum, w, h), w, h, palette);
 }

@@ -12,8 +12,6 @@ export default function Hero({ onTrace, busy }) {
 
   return (
     <header className="hero">
-      <DitherStrip className="hero__strip" noise={busy ? 1 : 0} />
-
       <div className="hero__inner page">
         <p className="t-label hero__wordmark">
           Burn fAIke
@@ -65,6 +63,8 @@ export default function Hero({ onTrace, busy }) {
           </p>
         </form>
       </div>
+
+      <DitherStrip className="hero__strip" noise={busy ? 1 : 0} />
     </header>
   );
 }

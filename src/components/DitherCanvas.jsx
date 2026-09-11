@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { paintBand, paintStrip } from '../lib/dither';
+import { useEffect, useRef, useState } from 'react';
+import { paintBand, paintFootage } from '../lib/dither';
 
 function useReducedMotion() {
   const ref = useRef(false);
@@ -61,12 +61,44 @@ export function DitherBand({ density, run, label, className = '', pixelSize = 3 
   return <canvas ref={canvasRef} className={className} role="img" aria-label={label} />;
 }
 
+/* The hero's footage, converted by tools/footage-to-strip.mjs. */
+function useFootage() {
+  const [footage, setFootage] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    const base = import.meta.env.BASE_URL;
+
+    fetch(`${base}hero-strip.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no manifest'))))
+      .then(
+        (m) =>
+          new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve({ ...m, image });
+            image.onerror = () => reject(new Error('no sheet'));
+            image.src = `${base}hero-strip.png`;
+          }),
+      )
+      .then((f) => live && setFootage(f))
+      /* No footage is a valid state, not an error to report. */
+      .catch(() => {});
+
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return footage;
+}
+
 /* The hero strip. Runs at 12fps — low frame rates are correct here. `noise`
  * mixes the field toward static, which is the loading state (§7). */
-export function DitherStrip({ noise = 0, className = '', pixelSize = 3, label }) {
+export function DitherStrip({ noise = 0, className = '', pixelSize = 3 }) {
   const canvasRef = useRef(null);
   const noiseRef = useRef(noise);
   const reduced = useReducedMotion();
+  const footage = useFootage();
 
   noiseRef.current = noise;
 
@@ -74,37 +106,55 @@ export function DitherStrip({ noise = 0, className = '', pixelSize = 3, label })
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
+    if (!footage) return undefined;
+
+    const fps = footage.fps || 12;
+
+    const paint = (time, n) =>
+      paintFootage(canvas, {
+        ...footage,
+        frameWidth: footage.width,
+        frame: Math.floor(time * fps),
+        time,
+        noise: n,
+        pixelSize,
+        anchorY: 0.41,
+      });
+
+    /* Reduced motion holds a single frame rather than running the loop. */
     if (reduced) {
-      paintStrip(canvas, { pixelSize, time: 0, noise: 0 });
+      paint(0, 0);
       return undefined;
     }
 
     let raf;
     let last = 0;
     const start = performance.now();
-    const FRAME = 1000 / 12;
+    const FRAME = 1000 / fps;
 
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       if (now - last < FRAME) return;
       last = now;
-      paintStrip(canvas, {
-        pixelSize,
-        time: (now - start) / 1000,
-        noise: noiseRef.current,
-      });
+      paint((now - start) / 1000, noiseRef.current);
     };
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [reduced, pixelSize]);
+  }, [reduced, pixelSize, footage]);
 
-  useResize(
-    canvasRef,
-    () =>
-      canvasRef.current &&
-      paintStrip(canvasRef.current, { pixelSize, time: 0, noise: noiseRef.current }),
-  );
+  useResize(canvasRef, () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !footage) return;
+    paintFootage(canvas, {
+      ...footage,
+      frameWidth: footage.width,
+      frame: 0,
+      noise: noiseRef.current,
+      pixelSize,
+      anchorY: 0.41,
+    });
+  });
 
-  return <canvas ref={canvasRef} className={className} aria-hidden="true" data-label={label} />;
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
