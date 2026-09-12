@@ -87,6 +87,13 @@ Notes on the parts that needed a decision:
   the headline never needs a fourth. Before Anton loads, a condensed system
   fallback stands in; on a device with no condensed face the headline can run
   long for that first paint.
+- **On a phone the panel sits under the headline, not last.** The qualifier and
+  supporting line are their own grid row, so source order puts the panel second
+  and grid placement puts it back in the right-hand column on desktop. It is
+  sized by an explicit height rather than an aspect ratio: a `max-height`
+  capping a ratio box shrinks its width too, and the panel stops aligning with
+  the text. The near-square box also resolves the cell count to one — two
+  amulets at phone width are about 110px of sparse dither each and go unnoticed.
 - **The headline keeps eight of the twelve columns**, which is what the spec's
   132px ceiling needs to still set in three lines — so splitting the hero did not
   cost the type scale. The panel takes the remaining four and is stretched to the

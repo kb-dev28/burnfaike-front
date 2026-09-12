@@ -36,6 +36,15 @@ export default function Hero({ onTrace, busy }) {
               a price
             </h1>
 
+          </div>
+
+          {/* Between the headline and the tagline in the DOM. On desktop grid
+              placement puts it back in the right-hand column; on a phone, where
+              everything stacks in source order, it lands directly under the
+              headline instead of last, where it was being missed. */}
+          <DitherPanel className="hero__panel" name={HERO_FOOTAGE} noise={busy ? 1 : 0} />
+
+          <div className="hero__tagline">
             {/* Explicit spans, so each phrase is its own flex item and the gap
                 between them is reliable once the separators drop away. */}
             <p className="t-label hero__qualifier">
@@ -50,8 +59,6 @@ export default function Hero({ onTrace, busy }) {
               Where the story started, how it mutated, and what still holds. Not a verdict.
             </p>
           </div>
-
-          <DitherPanel className="hero__panel" name={HERO_FOOTAGE} noise={busy ? 1 : 0} />
         </div>
 
         <form className="trace-form" onSubmit={submit}>

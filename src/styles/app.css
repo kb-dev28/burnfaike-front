@@ -48,15 +48,23 @@
 }
 
 .hero__headline-block {
-  grid-column: span 8;
+  grid-column: 1 / span 8;
+  grid-row: 1;
   min-width: 0;
 }
 
-/* Stretched to the headline's height, so the panel is sized by the type rather
- * than by a number picked to look right at one width. */
+.hero__tagline {
+  grid-column: 1 / span 8;
+  grid-row: 2;
+  min-width: 0;
+}
+
+/* Spans both rows, so it is sized by the type beside it rather than by a
+ * number picked to look right at one width. */
 .hero__panel {
   position: relative;
-  grid-column: span 4;
+  grid-column: 9 / span 4;
+  grid-row: 1 / span 2;
   min-height: 280px;
 }
 
@@ -110,6 +118,10 @@
   row-gap: var(--s4);
   margin: var(--s24) 0 0;
   color: var(--signal);
+}
+
+.hero__tagline .hero__qualifier {
+  margin-top: var(--s24);
 }
 
 .hero__support {
@@ -539,17 +551,25 @@
 /* ---- Responsive (§9: full layout down to 360px) ------------------------- */
 
 @media (max-width: 900px) {
-  /* Stacked: the panel keeps its own row under the headline, and its wider box
-   * makes the cell count resolve to two amulets instead of one. */
+  /* Stacked in source order, so the panel sits directly under the headline. A
+   * near-square box resolves the cell count to one, which is the point: two
+   * amulets at this width are each about 110px of sparse dither and go
+   * unnoticed. One fills the box. */
   .hero__headline-block,
+  .hero__tagline,
   .hero__panel {
     grid-column: span 12;
+    grid-row: auto;
   }
 
+  /* An explicit height, not an aspect-ratio: a max-height capping a ratio box
+   * shrinks its width too, and the panel stops aligning with the text beside
+   * it. Scaled off the viewport width so it stays proportionate from a 360px
+   * phone up to the breakpoint. */
   .hero__panel {
-    margin-top: var(--s32);
+    margin-top: var(--s24);
     min-height: 0;
-    aspect-ratio: 2 / 1;
+    height: clamp(210px, 62vw, 340px);
   }
 
   .trail__row {
