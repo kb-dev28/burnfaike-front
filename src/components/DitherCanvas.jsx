@@ -166,5 +166,13 @@ export function DitherPanel({
     });
   });
 
-  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
+  /* The canvas is taken out of flow inside a wrapper. fitCanvas writes the
+   * element's width/height attributes, and on a replaced element those feed
+   * back into layout — with a ResizeObserver watching, that is a loop that
+   * never settles. Absolutely positioned, it cannot size anything. */
+  return (
+    <div className={className}>
+      <canvas ref={canvasRef} className="dither-canvas" aria-hidden="true" />
+    </div>
+  );
 }

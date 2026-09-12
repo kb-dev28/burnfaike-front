@@ -46,7 +46,7 @@ changes the public URL and breaks `base`.
 | §5 Marker — highlight / strike / redaction | `src/components/Marker.jsx` |
 | §6 Components | `src/components/` |
 | §8 Copy — four result states, never a verdict | `AgentInterface.jsx`, `data/trace.js` |
-| §7 Motion — one orchestrated moment | `DitherCanvas.jsx` |
+| §7 Motion — one orchestrated moment, dither as the loading state | `DitherCanvas.jsx`, `TraceOverlay.jsx` |
 | §9 Accessibility floor | throughout; see below |
 
 Notes on the parts that needed a decision:
@@ -67,6 +67,16 @@ Notes on the parts that needed a decision:
   the dither underneath to be readable (§9).
 - **The score is a consequence of the trail**, so the meter renders after the
   evidence board in reading order (§10).
+- **Research in flight takes the whole screen.** The trace overlay is the
+  dither at full saturation, with the rounds and queries set over it in a solid
+  slab of ink — no border, so the text reads as a hole punched through the noise
+  rather than a card on top of it. The text is not decoration: §9 forbids the
+  dither carrying meaning alone, and showing the queries as they are issued is
+  the product's first principle anyway.
+- **The overlay is skipped entirely under `prefers-reduced-motion`**, which goes
+  straight to the settled result. A full-viewport field at ~50% coverage
+  changing every frame is a large-area flash pattern, and that setting is the
+  mitigation — so it is a hard skip, not a slower version.
 - **"Agent-compatible" is shown, not claimed.** The agent interface section
   renders the tool definition and a response payload derived from the sample
   trail itself, so the documented shape cannot drift from the data. It is always

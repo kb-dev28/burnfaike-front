@@ -6,6 +6,7 @@ import EvidenceBoard from './components/EvidenceBoard';
 import ParanoiaMeter from './components/ParanoiaMeter';
 import Synthesis from './components/Synthesis';
 import AgentInterface from './components/AgentInterface';
+import TraceOverlay from './components/TraceOverlay';
 import { TRACE, EXAMPLE_CLAIM } from './data/trace';
 
 /* Rounds land one at a time so the process stays visible — the first of the
@@ -42,10 +43,12 @@ export default function App() {
     return () => timers.forEach(clearTimeout);
   }, [phase]);
 
+  /* Scroll when the overlay lifts, not when the trace starts: during the trace
+   * the screen belongs to the loading field, and body scrolling is locked. */
   useEffect(() => {
-    if (phase === 'idle' || !resultRef.current) return;
+    if (phase !== 'result' || !resultRef.current) return;
     resultRef.current.scrollIntoView({ block: 'start' });
-  }, [phase === 'idle']);
+  }, [phase]);
 
   const started = phase !== 'idle';
   const substituted = started && claim !== EXAMPLE_CLAIM;
@@ -53,6 +56,10 @@ export default function App() {
   return (
     <>
       <Hero onTrace={trace} busy={phase === 'tracing'} />
+
+      {phase === 'tracing' && (
+        <TraceOverlay claim={claim} rounds={TRACE.rounds} visible={visibleRounds} />
+      )}
 
       {started && (
         <main ref={resultRef}>

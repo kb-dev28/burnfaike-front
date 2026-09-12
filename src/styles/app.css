@@ -55,10 +55,17 @@
 /* Stretched to the headline's height, so the panel is sized by the type rather
  * than by a number picked to look right at one width. */
 .hero__panel {
+  position: relative;
   grid-column: span 4;
+  min-height: 280px;
+}
+
+.dither-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  min-height: 280px;
+  height: 100%;
 }
 
 .hero__inner {
@@ -685,5 +692,109 @@
 @media (max-width: 900px) {
   .agent__block {
     grid-column: span 12;
+  }
+}
+
+/* ---- Trace overlay (§7) ------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ink);
+  overscroll-behavior: contain;
+}
+
+.overlay__field {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay__inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* A solid slab of ink, no border: the text reads as a hole punched through the
+ * noise rather than as a card floating on top of it. */
+.overlay__slab {
+  background: var(--ink);
+  padding: var(--s32) var(--s48) var(--s32) var(--s32);
+  margin-left: calc(var(--s32) * -1);
+  max-width: 660px;
+}
+
+.overlay__state {
+  margin: 0 0 var(--s16);
+  color: var(--signal);
+}
+
+.overlay__claim {
+  margin: 0 0 var(--s32);
+}
+
+.overlay__round {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  column-gap: var(--gutter);
+  align-items: start;
+  padding-top: var(--s24);
+  border-top: var(--hairline);
+}
+
+.overlay__round-id {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--rule);
+}
+
+.overlay__queries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-width: 0;
+}
+
+.overlay__query {
+  color: var(--paper-dim);
+  word-break: break-word;
+}
+
+.overlay__query::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 1px;
+  background: var(--signal);
+  vertical-align: middle;
+  margin-right: var(--s8);
+}
+
+.overlay__count {
+  margin: var(--s24) 0 0;
+}
+
+@media (max-width: 767px) {
+  .overlay__slab {
+    padding: var(--s24) var(--s24) var(--s24) var(--s16);
+    margin-left: calc(var(--s16) * -1);
+  }
+
+  .overlay__round {
+    grid-template-columns: 1fr;
+    row-gap: var(--s12);
   }
 }

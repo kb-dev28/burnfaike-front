@@ -268,3 +268,29 @@ export function paintFootage(canvas, options = {}) {
 
   blitBits(canvas, diffuse(lum, w, h), w, h, palette);
 }
+
+/* Pure static, full field. The loading state (§7): research in flight is shown
+ * as the dither at full saturation rather than as a spinner.
+ *
+ * No error diffusion here — the source is already random, so diffusing it would
+ * only cost time to produce the same distribution. The threshold is the whole
+ * device.
+ */
+export function paintStatic(canvas, options = {}) {
+  const { time = 0, density = 0.5, pixelSize = 3, palette = 'signal', seed = 5 } = options;
+
+  const grid = fitCanvas(canvas, pixelSize);
+  if (!grid) return;
+  const { w, h } = grid;
+  const bits = new Uint8Array(w * h);
+  const frame = Math.floor(time * 12) + seed;
+  const cut = 1 - clamp01(density);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      bits[y * w + x] = hash2(x, y, frame) > cut ? 1 : 0;
+    }
+  }
+
+  blitBits(canvas, bits, w, h, palette);
+}
