@@ -7,31 +7,48 @@ import ParanoiaMeter from './components/ParanoiaMeter';
 import Synthesis from './components/Synthesis';
 import AgentInterface from './components/AgentInterface';
 import TraceOverlay from './components/TraceOverlay';
-import { TRACE, EXAMPLE_CLAIM } from './data/trace';
+import { EXAMPLE_CLAIM } from './data/trace';
+import { postIntake } from './lib/intake';
+import { mapTraceJob, PENDING_ROUNDS } from './lib/map-trace';
 
-/* Rounds land one at a time so the process stays visible — the first of the
- * three things the identity has to communicate. Hard cuts, no transitions. */
 const ROUND_AT = [250, 1100, 1950];
-const RESULT_AT = 2700;
 
 export default function App() {
   const [phase, setPhase] = useState('idle');
   const [claim, setClaim] = useState(EXAMPLE_CLAIM);
   const [visibleRounds, setVisibleRounds] = useState(0);
+  const [traceData, setTraceData] = useState(null);
+  const [error, setError] = useState(null);
   const resultRef = useRef(null);
 
   const trace = (next) => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setClaim(next);
-
-    if (reduced) {
-      setVisibleRounds(TRACE.rounds.length);
-      setPhase('result');
-      return;
-    }
-
+    setError(null);
+    setTraceData(null);
     setVisibleRounds(0);
     setPhase('tracing');
+
+    postIntake(next)
+      .then((job) => {
+        const mapped = mapTraceJob(job);
+        setTraceData(mapped);
+        if (reduced) {
+          setVisibleRounds(mapped.rounds.length);
+        }
+        setPhase('result');
+      })
+      .catch((caught) => {
+        setError(caught instanceof Error ? caught.message : 'Trace failed.');
+        if (caught && caught.job) {
+          try {
+            setTraceData(mapTraceJob(caught.job));
+          } catch {
+            setTraceData(null);
+          }
+        }
+        setPhase('error');
+      });
   };
 
   useEffect(() => {
@@ -39,51 +56,65 @@ export default function App() {
     const timers = ROUND_AT.map((ms, i) =>
       setTimeout(() => setVisibleRounds(i + 1), ms),
     );
-    timers.push(setTimeout(() => setPhase('result'), RESULT_AT));
     return () => timers.forEach(clearTimeout);
   }, [phase]);
 
-  /* Scroll when the overlay lifts, not when the trace starts: during the trace
-   * the screen belongs to the loading field, and body scrolling is locked. */
   useEffect(() => {
-    if (phase !== 'result' || !resultRef.current) return;
+    if (phase !== 'result' || !traceData) return undefined;
+    setVisibleRounds(traceData.rounds.length);
+    return undefined;
+  }, [phase, traceData]);
+
+  useEffect(() => {
+    if ((phase !== 'result' && phase !== 'error') || !resultRef.current) return;
     resultRef.current.scrollIntoView({ block: 'start' });
   }, [phase]);
 
   const started = phase !== 'idle';
-  const substituted = started && claim !== EXAMPLE_CLAIM;
+  const overlayRounds = PENDING_ROUNDS;
+  const result = traceData;
 
   return (
     <>
       <Hero onTrace={trace} busy={phase === 'tracing'} />
 
       {phase === 'tracing' && (
-        <TraceOverlay claim={claim} rounds={TRACE.rounds} visible={visibleRounds} />
+        <TraceOverlay
+          claim={claim}
+          rounds={overlayRounds}
+          visible={Math.max(visibleRounds, 1)}
+        />
       )}
 
-      {started && (
+      {started && phase !== 'tracing' && (
         <main ref={resultRef}>
           <ClaimBar
             claim={claim}
-            domains={TRACE.domains}
-            elapsed={phase === 'result' ? TRACE.elapsed : 'running'}
-            state={phase === 'result' ? TRACE.state : 'tracing'}
+            domains={result ? result.domains : 0}
+            elapsed={result ? result.elapsed : 'failed'}
+            state={result ? result.state : 'no source found'}
           />
 
-          {substituted && (
+          {error && (
             <p className="t-meta notice page">
-              The research engine is not wired up in this build. The trail below is the
-              sample trace, shown against the claim as submitted.
+              {error}
             </p>
           )}
 
-          <ResearchTrail rounds={TRACE.rounds} visible={visibleRounds} />
-
-          {phase === 'result' && (
+          {result && (
             <>
-              <EvidenceBoard evidence={TRACE.evidence} pairs={TRACE.pairs} />
-              <ParanoiaMeter score={TRACE.score} label={TRACE.scoreLabel} run />
-              <Synthesis parts={TRACE.synthesis} />
+              <ResearchTrail
+                rounds={result.rounds}
+                visible={visibleRounds || result.rounds.length}
+              />
+
+              {phase === 'result' && (
+                <>
+                  <EvidenceBoard evidence={result.evidence} pairs={result.pairs} />
+                  <ParanoiaMeter score={result.score} label={result.scoreLabel} run />
+                  <Synthesis parts={result.synthesis} />
+                </>
+              )}
             </>
           )}
         </main>
@@ -92,8 +123,6 @@ export default function App() {
       <AgentInterface />
 
       <footer className="footer page">
-        {/* The result states moved into the agent interface section, where they
-            are part of the contract rather than a footnote. */}
         <p className="t-meta">
           Burn fAIke — a rumor-tracing agent. Run a trace above, or call it from your
           own stack.

@@ -4,16 +4,19 @@ An AI agent that traces rumors, built for trading desks. You submit a claim — 
 your own agent calls it as a tool — and it researches across several rounds and
 returns a **provenance trail rather than a verdict**.
 
-Live: https://gauthierdewilliencourt.github.io/burnfaike-front/
+This checkout is the fork https://github.com/kb-dev28/burnfaike-front.git  
+Live UI: https://kb-dev28.github.io/burnfaike-front/  
+Live API: https://burn-faike.vercel.app/api/intake
 
 This repository is the front end, built to `design-system.md` — that file is
 normative, and the code references its sections in comments.
 
 ## What is real and what is not
 
-The interface is complete. The research engine is not wired up: submitting a
-claim runs the sample trail in `src/data/trace.js` against whatever you typed,
-and the app says so on screen when the claim differs from the example.
+Submitting a claim calls `POST` `$VITE_INTAKE_URL` (Burn fAIke on Vercel).
+The response `job` is mapped in `src/lib/map-trace.js` and rendered by the
+1-bit UI. `src/data/trace.js` remains the documented sample for the agent
+interface section, not the live trail.
 
 Everything named in that sample — companies, accounts, publications, dates — is
 invented, so nothing in this repository asserts anything about a real
@@ -30,11 +33,21 @@ npm run preview    # serves the built output
 
 ## Deploy
 
-GitHub Pages is branch-based, no Actions workflow. `vite.config.js` sets
-`base: '/burnfaike-front/'` and builds into `docs/`, which is committed. Settings →
-Pages → Source: `main`, folder `/docs`.
+This checkout pushes to **your fork**, not the designer’s repo:
 
-Every deploy is `npm run build` then commit `docs/` and push. Renaming the repo
+```bash
+git remote -v
+# origin must be https://github.com/kb-dev28/burnfaike-front.git
+```
+
+GitHub Pages is branch-based, no Actions workflow. `vite.config.js` sets
+`base: '/burnfaike-front/'` and builds into `docs/`, which is committed.
+Settings → Pages → Source: `main`, folder `/docs`.
+
+Public URL: https://kb-dev28.github.io/burnfaike-front/
+
+Every deploy is `npm run build` (with `VITE_INTAKE_URL=https://burn-faike.vercel.app/api/intake`)
+then commit `docs/` and `git push origin main`. Renaming the fork
 changes the public URL and breaks `base`.
 
 ## How the design system is implemented
@@ -174,9 +187,16 @@ src/
     └── DitherCanvas.jsx   # canvas wrappers, footage loading, motion handling
 ```
 
-## Next
+## Integration status
 
-Wire the research engine behind `trace()` in `src/App.jsx`. It needs to return
-the shape in `src/data/trace.js`: rounds with queries and the gap that triggered
-the next round, evidence items with marker-annotated segments, a score, and a
-synthesis with citations.
+- [x] Paso 1 — Mapper `src/lib/map-trace.js`
+- [x] Paso 2 — CORS en `https://burn-faike.vercel.app/api/intake` (origin `https://kb-dev28.github.io`; falta publicar el backend)
+- [x] Paso 3 — Cliente `src/lib/intake.js` + `VITE_INTAKE_URL`
+- [x] Paso 4 — `src/App.jsx` pinta el `job` real
+- [x] Paso 5 — Proxy Vite `/api` → `localhost:3000`
+- [x] Paso 6 — README del fork (push y Pages los corrés vos)
+
+This repo is the fork https://github.com/kb-dev28/burnfaike-front.git  
+Live UI: https://kb-dev28.github.io/burnfaike-front/  
+Live API: https://burn-faike.vercel.app/api/intake  
+Project form (Submit is not Save): https://app.burningtoken.dev/dashboard/projects/dbe481c5-7c32-49f2-a897-bdbf8163f2fc/edit
